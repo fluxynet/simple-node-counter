@@ -1,0 +1,11 @@
+{
+  "name": "counter",
+  "version": "1.0.0",
+  "description": "Very simple nodejs counter",
+  "author": "fluxy <fx@fluxy.net>",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.15.2",
+    "redis": "^2.7.1"
+  }
+}
