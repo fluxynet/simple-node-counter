@@ -2,28 +2,50 @@ const app     = require('express')();
 const simple  = process.argv.indexOf('--simple') !== -1;
 const port    = (() => {
     let pi = process.argv.indexOf('--port');
-    return process.argv.length > pi+1
-        && parseInt(process.argv[pi+1]) ? parseInt(process.argv[pi+1]) : 1234;
+    return process.argv.length > pi+1 && parseInt(process.argv[pi+1])
+        ? parseInt(process.argv[pi+1]) : 1234;
 })();
-const counter = simple ? (function() {
+
+const inApp = () => {
     let me   = this;
     me.data  = [];
 
     return {
-        incr : (key) => {
-            if (!me.data.hasOwnProperty(key)) {
-                me.data[key] = 0;
-            }
-            return ++(me.data[key]);
+        incr : key => {
+            return new Promise(resolve => {
+                if (!me.data.hasOwnProperty(key)) {
+                    me.data[key] = 0;
+                }
+                resolve(++(me.data[key]));
+            });
         }
     };
-})() : require('redis').createClient();
+};
+
+const inRedis = () => {
+    let client = require('redis').createClient();
+    return {
+        incr : key => {
+            return new Promise(resolve => {
+                client.incr(key, (err, result) => {
+                    resolve(err ? -1 : result);
+                });
+            });
+        }
+    };
+};
+
+const counter = simple ? inApp() : inRedis();
 
 app.get('/*', function (req, res) {
-  res.json({
-      all : counter.incr('#counter:all'),
-      path: counter.incr(req.path)
-  })
+    let pAll  = counter.incr('#counter:all');
+    let pPath = counter.incr(req.path);
+    Promise.all([pAll, pPath]).then(counts => {
+        res.json({
+            all : counts[0],
+            path: counts[1]
+        });
+    });
 });
 
 app.listen(port, function () {
