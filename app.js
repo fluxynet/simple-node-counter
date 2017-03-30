@@ -1,3 +1,4 @@
+'use strict';
 const app     = require('express')();
 const simple  = process.argv.indexOf('--simple') !== -1;
 const port    = (() => {
